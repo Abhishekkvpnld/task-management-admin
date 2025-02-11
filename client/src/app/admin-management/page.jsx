@@ -1,139 +1,150 @@
-"use client"
+"use client";
 
 import { IoIosSearch } from "react-icons/io";
 import axios from "axios";
 import { filterData } from "../../data/data";
-import API, { BACKEND_URL } from "../../constants/api";
-import { useEffect, useState } from "react";
+import { BACKEND_URL } from "../../constants/api";
+import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import UserCard from "@/components/UserCard";
 
-const AdminManagment = () => {
+const AdminManagement = () => {
   const [users, setUsers] = useState([]);
-  const [userRole, setUserRole] = useState("");
-  const [userStatus, setUserStatus] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filter, setFilter] = useState("");
+  const [token, setToken] = useState("");
 
+
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setToken(localStorage.getItem("token") || "");
+    }
+  }, []);
+
+
+  
+  useEffect(() => {
+    if (!token) return;
+    const fetchUsers = async () => {
+      try {
+        const res = await axios.get(`${BACKEND_URL}/admin/users`, {
+          withCredentials: true,
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUsers(res?.data?.data || []);
+      } catch (error) {
+        toast.error(error?.response?.data?.message || "Failed to fetch users");
+      }
+    };
+
+    fetchUsers();
+  }, [token]);
+
+
+  const filteredUsers = useMemo(() => {
+    let filteredList = [...users];
+
+    if (filter) {
+      filteredList = filteredList.filter((user) =>
+        filter === "CreatedAt"
+          ? new Date(user.createdAt)
+          : user.status === filter || user.role === filter
+      );
+    }
+
+    if (searchQuery) {
+      filteredList = filteredList.filter((user) =>
+        user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filteredList;
+  }, [filter, searchQuery, users]);
 
 
   const handleUpdateRole = async (id, role) => {
-    const token = localStorage.getItem("token") || "";
     try {
       const res = await axios.put(
         `${BACKEND_URL}/admin/update-role`,
         { id, role },
-        {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { withCredentials: true, headers: { Authorization: `Bearer ${token}` } }
       );
-      setUserRole(res?.data?.data?.role);
       toast.success(res?.data?.message);
-      fetchAllUsers();
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user._id === id ? { ...user, role } : user
+        )
+      );
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to update role");
     }
   };
 
+
   const handleUpdateStatus = async (id, status) => {
-    const token = localStorage.getItem("token") || "";
     try {
       const res = await axios.put(
         `${BACKEND_URL}/admin/update-status`,
         { id, status },
-        {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { withCredentials: true, headers: { Authorization: `Bearer ${token}` } }
       );
-      setUserStatus(res?.data?.data?.status);
       toast.success(res?.data?.message);
-      fetchAllUsers();
+      setUsers((prevUsers) =>
+        prevUsers.map((user) =>
+          user._id === id ? { ...user, status } : user
+        )
+      );
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to update status");
     }
   };
 
+
   const handleDeleteUser = async (id) => {
-    const token = localStorage.getItem("token") || "";
-    const isConfirmed = window.confirm("Are you sure you want to delete this user?");
-    if (isConfirmed) {
-      try {
-        const res = await axios.delete(`${BACKEND_URL}/admin/delete-user/${id}`, {
-          withCredentials: true,
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
 
-        if (res?.data?.success) {
-          toast.success(res?.data?.message);
-          setUsers(users.filter((user) => user._id !== id));
-        }
-      } catch (error) {
-        toast.error(error?.response?.data?.message || "Error deleting user");
-      }
-    }
-  };
-
-  const handleFilterData = (value) => {
-    let filteredList = [...users];
-
-    if (value === "Active") {
-      filteredList = users.filter((user) => user.status === "Active");
-    } else if (value === "InActive") {
-      filteredList = users.filter((user) => user.status === "InActive");
-    } else if (value === "User") {
-      filteredList = users.filter((user) => user.role === "User");
-    } else if (value === "Admin") {
-      filteredList = users.filter((user) => user.role === "Admin");
-    } else if (value === "CreatedAt") {
-      filteredList = [...users].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    }
-
-    setFilteredUsers(filteredList);
-  };
-
-  const fetchAllUsers = async () => {
-    const token = localStorage.getItem("token") || "";
     try {
-      const res = await axios.get(`${BACKEND_URL}/admin/users`, {
+      const res = await axios.delete(`${BACKEND_URL}/admin/delete-user/${id}`, {
         withCredentials: true,
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(res?.data?.data || []);
-      setFilteredUsers(res?.data?.data || []);
+
+      if (res?.data?.success) {
+        toast.success(res?.data?.message);
+        setUsers((prevUsers) => prevUsers.filter((user) => user._id !== id));
+      }
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to fetch users");
+      toast.error(error?.response?.data?.message || "Error deleting user");
     }
   };
 
-  useEffect(() => {
-    fetchAllUsers();
-  }, [userRole, userStatus]);
-
   return (
-    <div className="flex items-center justify-start flex-col gap-2 w-[100vw] p-3">
+    <div className="flex items-center justify-start flex-col gap-2 w-full p-3">
       <h1 className="font-bold m-3">User List and Controls</h1>
 
-      <div className="flex-row flex items-center justify-between px-4 gap-3 w-[100vw]">
-        <div className="flex items-center justify-between gap-2 pr-2 border-2 rounded-md w-[50%]">
+
+      <div className="flex-row flex items-center justify-between px-4 gap-3 w-full">
+        <div className="flex items-center border-2 rounded-md w-[50%]">
           <input
             type="text"
             placeholder="Search username..."
-            className="px-2 py-1 rounded-md w-[100%]"
+            className="px-2 py-1 rounded-md w-full outline-none"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <span className="flex text-xl gap-1">
+          <span className="flex text-xl gap-1 px-2">
             <IoIosSearch title="search" className="hover:scale-125 cursor-pointer transition-all" />
           </span>
         </div>
 
         <select
-          name="status"
-          id="status"
-          onChange={(e) => handleFilterData(e.target.value)}
+          onChange={(e) => setFilter(e.target.value)}
           className="border border-black text-sm font-semibold rounded p-1"
         >
+          <option value="">All Users</option>
           {filterData.map((item, index) => (
-            <option className="bg-slate-100 px-2 font-semibold hover:bg-slate-200" key={index} value={item.value}>
+            <option key={index} value={item.value}>
               {item.label} {item.label === "Creation Date" ? "↑" : ""}
             </option>
           ))}
@@ -143,8 +154,6 @@ const AdminManagment = () => {
       <UserCard
         handleDeleteUser={handleDeleteUser}
         users={filteredUsers}
-        userRole={userRole}
-        setUserRole={setUserRole}
         handleUpdateRole={handleUpdateRole}
         handleUpdateStatus={handleUpdateStatus}
       />
@@ -152,4 +161,4 @@ const AdminManagment = () => {
   );
 };
 
-export default AdminManagment;
+export default AdminManagement;
