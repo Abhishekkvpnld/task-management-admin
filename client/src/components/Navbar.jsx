@@ -9,9 +9,10 @@ import { useRouter } from "next/navigation";
 const Navbar = () => {
     const router = useRouter();
     const [userData, setUserData] = useState(null);
+    const [isClient, setIsClient] = useState(false);
 
-    // Ensure `localStorage` access only on the client side
     useEffect(() => {
+        setIsClient(true);
         if (typeof window !== "undefined") {
             const storedUser = localStorage.getItem("user");
             setUserData(storedUser ? JSON.parse(storedUser) : null);
@@ -22,8 +23,10 @@ const Navbar = () => {
         try {
             const res = await logoutUser();
             if (res?.success) {
-                localStorage.removeItem("token");
-                localStorage.removeItem("user");
+                if (typeof window !== "undefined") {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("user");
+                }
                 router.push("/login");
                 toast.success(res?.message || "Logged out successfully!");
             }
@@ -31,6 +34,8 @@ const Navbar = () => {
             toast.error("Logout failed. Please try again.");
         }
     };
+
+    if (!isClient) return null;
 
     return (
         <div className="py-1 border-b-2 px-4">
@@ -68,4 +73,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
- 

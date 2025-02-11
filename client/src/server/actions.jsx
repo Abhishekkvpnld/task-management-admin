@@ -1,7 +1,6 @@
 "use server";
 
-import axios from "axios";
-import API, { BACKEND_URL } from "../constants/api";
+import API from "../constants/api";
 
 
 export async function addUser(formData) {
