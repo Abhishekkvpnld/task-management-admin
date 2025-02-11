@@ -12,18 +12,17 @@ const AdminManagement = () => {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(null); 
+  const [isClient, setIsClient] = useState(false);
 
-
-  
+nt
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setToken(localStorage.getItem("token") || "");
-    }
+    setIsClient(true);
+    const storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    setToken(storedToken);
   }, []);
 
 
-  
   useEffect(() => {
     if (!token) return;
     const fetchUsers = async () => {
@@ -81,7 +80,6 @@ const AdminManagement = () => {
     }
   };
 
-
   const handleUpdateStatus = async (id, status) => {
     try {
       const res = await axios.put(
@@ -99,7 +97,6 @@ const AdminManagement = () => {
       toast.error(error?.response?.data?.message || "Failed to update status");
     }
   };
-
 
   const handleDeleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
@@ -119,10 +116,9 @@ const AdminManagement = () => {
     }
   };
 
-  return (
+  return isClient ? (
     <div className="flex items-center justify-start flex-col gap-2 w-full p-3">
       <h1 className="font-bold m-3">User List and Controls</h1>
-
 
       <div className="flex-row flex items-center justify-between px-4 gap-3 w-full">
         <div className="flex items-center border-2 rounded-md w-[50%]">
@@ -151,6 +147,7 @@ const AdminManagement = () => {
         </select>
       </div>
 
+
       <UserCard
         handleDeleteUser={handleDeleteUser}
         users={filteredUsers}
@@ -158,7 +155,7 @@ const AdminManagement = () => {
         handleUpdateStatus={handleUpdateStatus}
       />
     </div>
-  );
+  ) : null;
 };
 
 export default AdminManagement;
