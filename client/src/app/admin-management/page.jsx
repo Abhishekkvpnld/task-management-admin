@@ -15,7 +15,7 @@ const AdminManagement = () => {
   const [token, setToken] = useState(null); 
   const [isClient, setIsClient] = useState(false);
 
-nt
+
   useEffect(() => {
     setIsClient(true);
     const storedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
