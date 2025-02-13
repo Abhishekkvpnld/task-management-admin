@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "My Next.js App", // ✅ Update this to match your project
+  title: "Task Manager",
   description: "A modern web application built with Next.js",
 };
 

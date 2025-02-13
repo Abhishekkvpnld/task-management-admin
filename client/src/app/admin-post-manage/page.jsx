@@ -17,7 +17,7 @@ const page = () => {
     const fetchPosts = async () => {
         const token = localStorage.getItem("token") || "";
         try {
-            const res = await axios.get(`${BACKEND_URL}/user/all-posts`,
+            const res = await axios.get(`${BACKEND_URL}/admin/all-posts`,
                 {
                     withCredentials: true,
                     headers: { Authorization: `Bearer ${token}` },
